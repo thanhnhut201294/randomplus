@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quay Số Pro - Stealth Mode</title>
+    <title>Quay Số Pro - Ultimate Stealth</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 
@@ -51,14 +51,23 @@
         }
 
         h2 {
-            margin-top: 0; color: #222; font-size: 24px; margin-bottom: 20px; text-transform: uppercase; cursor: pointer; user-select: none;
+            margin-top: 0; 
+            color: #222; 
+            font-size: 24px; 
+            margin-bottom: 20px; 
+            text-transform: uppercase; 
+            
+            /* --- CẬP NHẬT BẢO MẬT: KHÔNG HIỆN HÌNH BÀN TAY --- */
+            cursor: default; 
+            user-select: none;
         }
-        h2:active { transform: scale(0.98); }
+        
+        /* Loại bỏ hiệu ứng nhấn để không ai biết nó là nút */
+        h2:active { transform: none; }
 
         /* Admin Panel */
         #adminPanel {
-            display: none; background-color: #e3f2fd; /* Đổi màu xanh nhẹ cho khác biệt */
-            padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #2196f3; text-align: left;
+            display: none; background-color: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px dashed #2196f3; text-align: left;
         }
         #adminPanel label { display: block; font-size: 11px; color: #0d47a1; margin-bottom: 5px; margin-top: 10px; font-weight: bold; text-align: center; text-transform: uppercase; }
         #adminPanel textarea { width: 100%; padding: 8px; border: 1px solid #64b5f6; border-radius: 4px; color: #0d47a1; font-weight: bold; box-sizing: border-box; resize: vertical; min-height: 40px; font-family: inherit; }
@@ -82,7 +91,6 @@
         button#spinBtn:hover { background-color: #333; }
         button#spinBtn:disabled { background-color: #777; cursor: not-allowed; }
 
-        /* Kết quả hiển thị mượt mà */
         .result-box {
             margin-top: 25px;
             background-color: #fff;
@@ -109,13 +117,11 @@
             transition: font-size 0.1s ease-out; 
         }
 
-        /* CSS Bảng kết quả */
         .history-header { font-size: 18px; font-weight: bold; color: #333; text-align: center; padding-bottom: 10px; border-bottom: 2px solid #eee; margin-bottom: 10px; }
         .history-list { flex: 1; overflow-y: auto; list-style: none; padding: 0; margin: 0; }
         .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #f0f0f0; font-size: 15px; }
         .history-item:nth-child(even) { background-color: #fafafa; }
         .history-item span.index { font-weight: bold; color: #777; min-width: 50px; }
-        
         .history-item span.value { 
             font-weight: bold; color: #d32f2f; font-size: 16px; 
             text-align: right;
@@ -140,7 +146,7 @@
 
     <div class="app-wrapper">
         <div class="main-card">
-            <h2 onclick="toggleAdminPanel()" title="Cài đặt (Bí mật)">QUAY SỐ NGẪU NHIÊN</h2>
+            <h2 ondblclick="toggleAdminPanel()">QUAY SỐ NGẪU NHIÊN</h2>
 
             <div id="adminPanel">
                 <label>1. DANH SÁCH MONG MUỐN (CHEAT)</label>
@@ -264,18 +270,15 @@
                 if (listItems.length < 2) { alert("Nhập ít nhất 2 dòng"); return; }
             }
 
-            // Lấy danh sách Cheat
             let cheatList = [];
             let rawCheat = cheatInput.value.trim();
             if (rawCheat !== lastCheatString) { cheatIndex = 0; lastCheatString = rawCheat; }
             if (rawCheat !== "") cheatList = rawCheat.split(/[\n,]+/).map(i => i.trim()).filter(i => i !== '');
 
-            // Lấy danh sách Loại trừ thủ công
             let manualExclude = [];
             let rawExclude = excludeInput.value.trim();
             if (rawExclude !== "") manualExclude = rawExclude.split(/[\n,]+/).map(i => i.trim());
 
-            // --- KIỂM TRA ĐẦU VÀO (TRÁNH LỖI HẾT SỐ) ---
             if (mode === 'range' && cheatList.length === 0) {
                  const totalNumbers = max - min + 1;
                  const uniqueExclusions = new Set([...generatedHistory.map(String), ...manualExclude]);
@@ -304,7 +307,6 @@
             let spinInterval = setInterval(() => {
                 let elapsedTime = Date.now() - startTime;
                 
-                // Hiệu ứng nhảy số (Visual)
                 let randomVal;
                 if (mode === 'range') {
                     let temp = Math.floor(Math.random() * (max - min + 1)) + min;
@@ -320,37 +322,26 @@
                     let finalResult = null;
                     let foundValidCheat = false;
 
-                    // --- 1. LOGIC CHEAT THÔNG MINH (Stealth Mode) ---
-                    // Duyệt qua danh sách cheat để tìm số chưa bị dùng
                     while (cheatIndex < cheatList.length) {
                         let potentialCheat = cheatList[cheatIndex];
-                        
-                        // Kiểm tra xem Cheat này có nằm trong History hoặc Manual Exclude không
-                        let isUsed = generatedHistory.includes(potentialCheat) || 
-                                     manualExclude.includes(potentialCheat);
-                                     
-                        // Nếu là số thì check kỹ hơn (tránh trường hợp "01" != 1)
+                        let isUsed = generatedHistory.includes(potentialCheat) || manualExclude.includes(potentialCheat);
                         if (!isUsed) {
                             let nP = parseInt(potentialCheat);
                             if(!isNaN(nP)) {
-                                isUsed = generatedHistory.some(h => parseInt(h) === nP) || 
-                                         manualExclude.some(e => parseInt(e) === nP);
+                                isUsed = generatedHistory.some(h => parseInt(h) === nP) || manualExclude.some(e => parseInt(e) === nP);
                             }
                         }
 
                         if (!isUsed) {
-                            // TÌM THẤY SỐ CHEAT HỢP LỆ (CHƯA XUẤT HIỆN)
                             finalResult = potentialCheat;
                             foundValidCheat = true;
-                            cheatIndex++; // Tăng index để lần sau lấy số tiếp theo
-                            break; // Thoát vòng lặp cheat
+                            cheatIndex++; 
+                            break; 
                         } else {
-                            // Số này đã bị dùng rồi -> Bỏ qua, thử số cheat tiếp theo
                             cheatIndex++;
                         }
                     }
 
-                    // --- 2. LOGIC RANDOM (Nếu không có Cheat hợp lệ) ---
                     if (!foundValidCheat) {
                         let isValid = false;
                         let attempts = 0;
@@ -367,8 +358,6 @@
 
                             let sResult = finalResult.toString();
                             let nResult = parseInt(finalResult); 
-
-                            // Kiểm tra trùng lặp
                             let inHistory = generatedHistory.some(h => h.toString() === sResult);
                             let inManualExclude = manualExclude.includes(sResult) || (!isNaN(nResult) && manualExclude.includes(nResult.toString()));
 
@@ -383,7 +372,6 @@
                         }
                     }
 
-                    // Hiển thị và lưu kết quả
                     updateResultDisplay(finalResult);
                     addToHistory(finalResult);
                     
