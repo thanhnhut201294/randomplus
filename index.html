@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chọn Số Ngẫu Nhiên</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            position: relative; /* Để định vị các thành phần con */
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #222;
+            font-size: 24px;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            cursor: pointer; /* Biến chuột thành hình bàn tay để bấm */
+            user-select: none; /* Không cho bôi đen text */
+        }
+        
+        /* Hiệu ứng khi di chuột vào tiêu đề để người dùng biết có thể tương tác (tùy chọn) */
+        h2:active {
+            transform: scale(0.98);
+        }
+
+        /* Khu vực Admin bí mật */
+        #adminPanel {
+            display: none; /* Mặc định ẩn */
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px dashed #ff5252;
+        }
+
+        #adminPanel input {
+            width: 80%;
+            padding: 8px;
+            border: 1px solid #ff5252;
+            border-radius: 4px;
+            text-align: center;
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        .radio-group {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .radio-item input {
+            margin-right: 8px;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+
+        .input-section { display: block; }
+        .input-section.hidden { display: none; }
+
+        .input-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .input-group { width: 48%; }
+
+        .input-group label, .list-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            font-size: 18px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .list-group textarea {
+            width: 100%;
+            height: 80px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            resize: none;
+            font-family: inherit;
+        }
+
+        .timer-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            margin-top: 15px;
+        }
+
+        .timer-group select {
+            padding: 8px 15px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin: 0 10px;
+        }
+
+        button#spinBtn {
+            width: 100%;
+            padding: 15px;
+            background-color: #111;
+            color: #fff;
+            border: none;
+            border-radius: 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+        }
+
+        button#spinBtn:hover { background-color: #333; }
+        button#spinBtn:active { transform: scale(0.98); }
+        button:disabled { background-color: #777; cursor: not-allowed; }
+
+        .result-box {
+            margin-top: 25px;
+            background-color: #fff;
+            border: 1px solid #eee;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.02);
+        }
+
+        #resultNumber {
+            font-size: 60px;
+            font-weight: bold;
+            color: #ff0000;
+            margin: 0;
+            line-height: 1;
+        }
+        
+        /* Ẩn mũi tên input number */
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2 onclick="toggleAdminPanel()" title="Click để cài đặt kết quả (Bí mật)">CHỌN SỐ NGẪU NHIÊN</h2>
+
+        <div id="adminPanel">
+            <label style="display:block; font-size: 12px; color: #d32f2f; margin-bottom:5px;">CÀI ĐẶT KẾT QUẢ MONG MUỐN (CHEAT)</label>
+            <input type="text" id="cheatResult" placeholder="Nhập kết quả muốn về...">
+        </div>
+
+        <div class="radio-group">
+            <label class="radio-item">
+                <input type="radio" name="mode" value="range" checked onchange="toggleMode()"> Chọn khoảng số
+            </label>
+            <label class="radio-item">
+                <input type="radio" name="mode" value="list" onchange="toggleMode()"> Nhập danh sách
+            </label>
+        </div>
+
+        <div id="rangeSection" class="input-section">
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Từ số:</label>
+                    <input type="number" id="minNum" value="001" placeholder="Min">
+                </div>
+                <div class="input-group">
+                    <label>Đến số:</label>
+                    <input type="number" id="maxNum" value="999" placeholder="Max">
+                </div>
+            </div>
+        </div>
+
+        <div id="listSection" class="input-section hidden">
+            <div class="list-group">
+                <label>Nhập danh sách số (cách nhau bởi dấu phẩy):</label>
+                <textarea id="customList" placeholder="Ví dụ: 10, 25, 68, 99, 100..."></textarea>
+            </div>
+        </div>
+
+        <div class="timer-group">
+            <span>Thời gian quay:</span>
+            <select id="duration">
+                <option value="1">1</option>
+                <option value="3">3</option>
+                <option value="5">5</option>
+                <option value="10" selected>10</option>
+                <option value="15">15</option>
+            </select>
+            <span>giây</span>
+        </div>
+
+        <button id="spinBtn" onclick="startSpin()">Quay Số</button>
+
+        <div class="result-box">
+            <div id="resultNumber">---</div>
+        </div>
+    </div>
+
+    <script>
+        // Bật tắt Admin Panel
+        function toggleAdminPanel() {
+            const panel = document.getElementById('adminPanel');
+            if (panel.style.display === 'none' || panel.style.display === '') {
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+            }
+        }
+
+        function toggleMode() {
+            const rangeSection = document.getElementById('rangeSection');
+            const listSection = document.getElementById('listSection');
+            const radios = document.getElementsByName('mode');
+            
+            let isRangeMode = true;
+            for (let radio of radios) {
+                if (radio.checked && radio.value === 'list') isRangeMode = false;
+            }
+
+            if (isRangeMode) {
+                rangeSection.classList.remove('hidden');
+                listSection.classList.add('hidden');
+            } else {
+                rangeSection.classList.add('hidden');
+                listSection.classList.remove('hidden');
+            }
+        }
+
+        function formatNumber(num, length) {
+            return num.toString().padStart(length, '0');
+        }
+
+        function startSpin() {
+            const resultDisplay = document.getElementById('resultNumber');
+            const durationSelect = document.getElementById('duration');
+            const btn = document.getElementById('spinBtn');
+            const radios = document.getElementsByName('mode');
+            const cheatInput = document.getElementById('cheatResult'); // Lấy giá trị cheat
+
+            let mode = 'range';
+            for (let radio of radios) { if (radio.checked) mode = radio.value; }
+
+            let duration = parseInt(durationSelect.value) * 1000;
+            let listItems = [];
+            let min, max, paddingLength;
+
+            // Xử lý dữ liệu đầu vào
+            if (mode === 'range') {
+                const minInput = document.getElementById('minNum');
+                const maxInput = document.getElementById('maxNum');
+                min = parseInt(minInput.value);
+                max = parseInt(maxInput.value);
+                paddingLength = maxInput.value.length;
+                
+                if (isNaN(min) || isNaN(max)) { alert("Vui lòng nhập số hợp lệ!"); return; }
+                if (min >= max) { alert("Số bắt đầu phải nhỏ hơn số kết thúc!"); return; }
+            } else {
+                const textArea = document.getElementById('customList');
+                listItems = textArea.value.split(/[\n,]+/).map(i => i.trim()).filter(i => i !== '');
+                if (listItems.length < 2) { alert("Vui lòng nhập ít nhất 2 số!"); return; }
+            }
+
+            // --- KIỂM TRA CHEAT ---
+            let cheatValue = cheatInput.value.trim();
+            // Nếu có nhập cheat thì dùng, không thì để null
+            let targetResult = cheatValue !== "" ? cheatValue : null;
+
+            // Bắt đầu quay
+            btn.disabled = true;
+            btn.innerText = "Đang quay...";
+
+            let intervalTime = 50; 
+            let startTime = Date.now();
+
+            let spinInterval = setInterval(() => {
+                let currentTime = Date.now();
+                let elapsedTime = currentTime - startTime;
+                let randomVal;
+
+                // Hiệu ứng nhảy số ngẫu nhiên (chỉ để làm màu)
+                if (mode === 'range') {
+                    let temp = Math.floor(Math.random() * (max - min + 1)) + min;
+                    randomVal = formatNumber(temp, paddingLength);
+                } else {
+                    let randomIndex = Math.floor(Math.random() * listItems.length);
+                    randomVal = listItems[randomIndex];
+                }
+
+                resultDisplay.innerText = randomVal;
+
+                // Dừng quay
+                if (elapsedTime >= duration) {
+                    clearInterval(spinInterval);
+                    
+                    // --- KẾT QUẢ CHỐT HẠ ---
+                    if (targetResult !== null) {
+                        // Nếu có cài cheat -> Hiện thị kết quả cheat
+                        resultDisplay.innerText = targetResult;
+                    } else {
+                        // Nếu không cheat -> Random thật
+                        if (mode === 'range') {
+                            let final = Math.floor(Math.random() * (max - min + 1)) + min;
+                            resultDisplay.innerText = formatNumber(final, paddingLength);
+                        } else {
+                            let finalIndex = Math.floor(Math.random() * listItems.length);
+                            resultDisplay.innerText = listItems[finalIndex];
+                        }
+                    }
+                    
+                    btn.disabled = false;
+                    btn.innerText = "Quay Số";
+                }
+            }, intervalTime);
+        }
+    </script>
+</body>
+</html>
