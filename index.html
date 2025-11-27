@@ -43,39 +43,43 @@
         /* Khu vực Admin bí mật */
         #adminPanel {
             display: none;
-            background-color: #ffebee;
-            padding: 10px;
+            background-color: #fff3e0; /* Màu nền khác chút để phân biệt */
+            padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
-            border: 1px dashed #ff5252;
+            border: 1px dashed #ff9800;
             text-align: left;
         }
 
         #adminPanel label {
             display: block;
             font-size: 12px;
-            color: #d32f2f;
+            color: #e65100;
             margin-bottom: 5px;
+            margin-top: 10px;
             font-weight: bold;
             text-align: center;
+            text-transform: uppercase;
         }
+        
+        #adminPanel label:first-child { margin-top: 0; }
 
         #adminPanel textarea {
             width: 100%;
             padding: 8px;
-            border: 1px solid #ff5252;
+            border: 1px solid #ffb74d;
             border-radius: 4px;
-            color: #d32f2f;
+            color: #ef6c00;
             font-weight: bold;
             box-sizing: border-box;
             resize: vertical;
-            min-height: 60px;
+            min-height: 50px;
             font-family: inherit;
         }
 
         .note-text {
             font-size: 11px; 
-            color: #d32f2f; 
+            color: #ef6c00; 
             margin-top: 3px; 
             text-align: center;
             font-style: italic;
@@ -204,14 +208,19 @@
 <body>
 
     <div class="container">
-        <h2 onclick="toggleAdminPanel()" title="Cài đặt kết quả (Bí mật)">CHỌN SỐ NGẪU NHIÊN</h2>
+        <h2 onclick="toggleAdminPanel()" title="Cài đặt (Bí mật)">CHỌN SỐ NGẪU NHIÊN</h2>
 
         <div id="adminPanel">
-            <label>DANH SÁCH KẾT QUẢ MONG MUỐN (CHEAT)</label>
+            <label>1. DANH SÁCH KẾT QUẢ MONG MUỐN (CHEAT)</label>
             <textarea id="cheatInput" placeholder="Nhập số theo thứ tự muốn về..."></textarea>
             <div class="note-text">
-                *Kết quả sẽ trả về LẦN LƯỢT theo thứ tự nhập.<br>
-                *Khi hết danh sách sẽ quay ngẫu nhiên bình thường.
+                *Trả về lần lượt. Hết danh sách sẽ quay ngẫu nhiên.
+            </div>
+
+            <label>2. DANH SÁCH LOẠI TRỪ (KHÔNG MUỐN VỀ)</label>
+            <textarea id="excludeInput" placeholder="Nhập các số KHÔNG muốn xuất hiện..."></textarea>
+            <div class="note-text">
+                *Chỉ áp dụng khi quay ngẫu nhiên.
             </div>
         </div>
 
@@ -264,9 +273,9 @@
     </div>
 
     <script>
-        // --- BIẾN TOÀN CỤC ĐỂ LƯU TRẠNG THÁI CHEAT ---
-        let cheatIndex = 0;          // Vị trí hiện tại trong danh sách cheat
-        let lastCheatString = "";    // Lưu nội dung cheat cũ để kiểm tra thay đổi
+        // --- BIẾN TOÀN CỤC ---
+        let cheatIndex = 0;          
+        let lastCheatString = "";    
 
         function toggleAdminPanel() {
             const panel = document.getElementById('adminPanel');
@@ -305,7 +314,10 @@
             const durationSelect = document.getElementById('duration');
             const btn = document.getElementById('spinBtn');
             const radios = document.getElementsByName('mode');
+            
+            // Các input từ Admin Panel
             const cheatInput = document.getElementById('cheatInput'); 
+            const excludeInput = document.getElementById('excludeInput');
 
             let mode = 'range';
             for (let radio of radios) { if (radio.checked) mode = radio.value; }
@@ -314,7 +326,7 @@
             let listItems = [];
             let min, max, paddingLength;
 
-            // --- 1. XỬ LÝ ĐẦU VÀO CÔNG KHAI ---
+            // --- XỬ LÝ ĐẦU VÀO CÔNG KHAI ---
             if (mode === 'range') {
                 const minInput = document.getElementById('minNum');
                 const maxInput = document.getElementById('maxNum');
@@ -330,21 +342,27 @@
                 if (listItems.length < 2) { alert("Vui lòng nhập ít nhất 2 số!"); return; }
             }
 
-            // --- 2. XỬ LÝ LOGIC CHEAT (LẦN LƯỢT) ---
+            // --- XỬ LÝ DỮ LIỆU ADMIN ---
+            // 1. Cheat List
             let cheatList = [];
             let rawCheat = cheatInput.value.trim();
-
-            // Nếu người dùng thay đổi nội dung cheat, reset lại thứ tự về 0
             if (rawCheat !== lastCheatString) {
                 cheatIndex = 0;
                 lastCheatString = rawCheat;
             }
-
             if (rawCheat !== "") {
                 cheatList = rawCheat.split(/[\n,]+/).map(i => i.trim()).filter(i => i !== '');
             }
 
-            // --- 3. BẮT ĐẦU QUAY ---
+            // 2. Exclude List
+            let excludeList = [];
+            let rawExclude = excludeInput.value.trim();
+            if (rawExclude !== "") {
+                // Chuyển tất cả về string để so sánh chính xác
+                excludeList = rawExclude.split(/[\n,]+/).map(i => i.trim());
+            }
+
+            // --- BẮT ĐẦU QUAY ---
             btn.disabled = true;
             btn.innerText = "Đang quay...";
 
@@ -356,7 +374,7 @@
                 let elapsedTime = currentTime - startTime;
                 let randomVal;
 
-                // Hiệu ứng nhảy số (Visual Only)
+                // Hiệu ứng Visual (không cần check exclude ở đây cho mượt)
                 if (mode === 'range') {
                     let temp = Math.floor(Math.random() * (max - min + 1)) + min;
                     randomVal = formatNumber(temp, paddingLength);
@@ -366,25 +384,43 @@
                 }
                 resultDisplay.innerText = randomVal;
 
-                // --- 4. KẾT THÚC VÀ CHỐT SỐ ---
+                // --- KẾT THÚC ---
                 if (elapsedTime >= duration) {
                     clearInterval(spinInterval);
                     
                     let finalResult;
 
-                    // A. Ưu tiên lấy từ Cheat List (Theo thứ tự)
+                    // CASE 1: CÓ CHEAT -> Ưu tiên tuyệt đối
                     if (cheatList.length > 0 && cheatIndex < cheatList.length) {
                         finalResult = cheatList[cheatIndex];
-                        cheatIndex++; // Tăng chỉ số để lần sau lấy số tiếp theo
+                        cheatIndex++; 
                     } 
-                    // B. Nếu không cheat hoặc đã hết số cheat -> Random thật
+                    // CASE 2: RANDOM -> Phải check Exclude List
                     else {
-                        if (mode === 'range') {
-                            let final = Math.floor(Math.random() * (max - min + 1)) + min;
-                            finalResult = formatNumber(final, paddingLength);
-                        } else {
-                            let finalIndex = Math.floor(Math.random() * listItems.length);
-                            finalResult = listItems[finalIndex];
+                        let isValid = false;
+                        let attempts = 0;
+                        const maxAttempts = 100; // Tránh treo máy
+
+                        while (!isValid && attempts < maxAttempts) {
+                            attempts++;
+                            
+                            // Sinh số ngẫu nhiên
+                            if (mode === 'range') {
+                                let final = Math.floor(Math.random() * (max - min + 1)) + min;
+                                finalResult = formatNumber(final, paddingLength);
+                            } else {
+                                let finalIndex = Math.floor(Math.random() * listItems.length);
+                                finalResult = listItems[finalIndex];
+                            }
+
+                            // Kiểm tra xem số này có nằm trong Exclude List không
+                            // So sánh dạng chuỗi để tránh lỗi kiểu (1 vs "01")
+                            let isExcluded = excludeList.includes(finalResult.toString()) || 
+                                             excludeList.includes(parseInt(finalResult).toString());
+
+                            if (!isExcluded) {
+                                isValid = true; // Số sạch, thoát vòng lặp
+                            }
                         }
                     }
 
