@@ -25,7 +25,7 @@
             width: 100%;
             max-width: 450px;
             text-align: center;
-            position: relative; /* Để định vị các thành phần con */
+            position: relative;
         }
 
         h2 {
@@ -34,33 +34,51 @@
             font-size: 24px;
             margin-bottom: 25px;
             text-transform: uppercase;
-            cursor: pointer; /* Biến chuột thành hình bàn tay để bấm */
-            user-select: none; /* Không cho bôi đen text */
+            cursor: pointer;
+            user-select: none;
         }
         
-        /* Hiệu ứng khi di chuột vào tiêu đề để người dùng biết có thể tương tác (tùy chọn) */
-        h2:active {
-            transform: scale(0.98);
-        }
+        h2:active { transform: scale(0.98); }
 
         /* Khu vực Admin bí mật */
         #adminPanel {
-            display: none; /* Mặc định ẩn */
+            display: none;
             background-color: #ffebee;
             padding: 10px;
             border-radius: 8px;
             margin-bottom: 20px;
             border: 1px dashed #ff5252;
+            text-align: left;
         }
 
-        #adminPanel input {
-            width: 80%;
+        #adminPanel label {
+            display: block;
+            font-size: 12px;
+            color: #d32f2f;
+            margin-bottom: 5px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        #adminPanel textarea {
+            width: 100%;
             padding: 8px;
             border: 1px solid #ff5252;
             border-radius: 4px;
-            text-align: center;
             color: #d32f2f;
             font-weight: bold;
+            box-sizing: border-box;
+            resize: vertical;
+            min-height: 60px;
+            font-family: inherit;
+        }
+
+        .note-text {
+            font-size: 11px; 
+            color: #d32f2f; 
+            margin-top: 3px; 
+            text-align: center;
+            font-style: italic;
         }
 
         .radio-group {
@@ -180,18 +198,21 @@
             line-height: 1;
         }
         
-        /* Ẩn mũi tên input number */
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2 onclick="toggleAdminPanel()" title="Click để cài đặt kết quả (Bí mật)">CHỌN SỐ NGẪU NHIÊN</h2>
+        <h2 onclick="toggleAdminPanel()" title="Cài đặt kết quả (Bí mật)">CHỌN SỐ NGẪU NHIÊN</h2>
 
         <div id="adminPanel">
-            <label style="display:block; font-size: 12px; color: #d32f2f; margin-bottom:5px;">CÀI ĐẶT KẾT QUẢ MONG MUỐN (CHEAT)</label>
-            <input type="text" id="cheatResult" placeholder="Nhập kết quả muốn về...">
+            <label>DANH SÁCH KẾT QUẢ MONG MUỐN (CHEAT)</label>
+            <textarea id="cheatInput" placeholder="Nhập số theo thứ tự muốn về..."></textarea>
+            <div class="note-text">
+                *Kết quả sẽ trả về LẦN LƯỢT theo thứ tự nhập.<br>
+                *Khi hết danh sách sẽ quay ngẫu nhiên bình thường.
+            </div>
         </div>
 
         <div class="radio-group">
@@ -243,7 +264,10 @@
     </div>
 
     <script>
-        // Bật tắt Admin Panel
+        // --- BIẾN TOÀN CỤC ĐỂ LƯU TRẠNG THÁI CHEAT ---
+        let cheatIndex = 0;          // Vị trí hiện tại trong danh sách cheat
+        let lastCheatString = "";    // Lưu nội dung cheat cũ để kiểm tra thay đổi
+
         function toggleAdminPanel() {
             const panel = document.getElementById('adminPanel');
             if (panel.style.display === 'none' || panel.style.display === '') {
@@ -281,7 +305,7 @@
             const durationSelect = document.getElementById('duration');
             const btn = document.getElementById('spinBtn');
             const radios = document.getElementsByName('mode');
-            const cheatInput = document.getElementById('cheatResult'); // Lấy giá trị cheat
+            const cheatInput = document.getElementById('cheatInput'); 
 
             let mode = 'range';
             for (let radio of radios) { if (radio.checked) mode = radio.value; }
@@ -290,7 +314,7 @@
             let listItems = [];
             let min, max, paddingLength;
 
-            // Xử lý dữ liệu đầu vào
+            // --- 1. XỬ LÝ ĐẦU VÀO CÔNG KHAI ---
             if (mode === 'range') {
                 const minInput = document.getElementById('minNum');
                 const maxInput = document.getElementById('maxNum');
@@ -306,12 +330,21 @@
                 if (listItems.length < 2) { alert("Vui lòng nhập ít nhất 2 số!"); return; }
             }
 
-            // --- KIỂM TRA CHEAT ---
-            let cheatValue = cheatInput.value.trim();
-            // Nếu có nhập cheat thì dùng, không thì để null
-            let targetResult = cheatValue !== "" ? cheatValue : null;
+            // --- 2. XỬ LÝ LOGIC CHEAT (LẦN LƯỢT) ---
+            let cheatList = [];
+            let rawCheat = cheatInput.value.trim();
 
-            // Bắt đầu quay
+            // Nếu người dùng thay đổi nội dung cheat, reset lại thứ tự về 0
+            if (rawCheat !== lastCheatString) {
+                cheatIndex = 0;
+                lastCheatString = rawCheat;
+            }
+
+            if (rawCheat !== "") {
+                cheatList = rawCheat.split(/[\n,]+/).map(i => i.trim()).filter(i => i !== '');
+            }
+
+            // --- 3. BẮT ĐẦU QUAY ---
             btn.disabled = true;
             btn.innerText = "Đang quay...";
 
@@ -323,7 +356,7 @@
                 let elapsedTime = currentTime - startTime;
                 let randomVal;
 
-                // Hiệu ứng nhảy số ngẫu nhiên (chỉ để làm màu)
+                // Hiệu ứng nhảy số (Visual Only)
                 if (mode === 'range') {
                     let temp = Math.floor(Math.random() * (max - min + 1)) + min;
                     randomVal = formatNumber(temp, paddingLength);
@@ -331,27 +364,31 @@
                     let randomIndex = Math.floor(Math.random() * listItems.length);
                     randomVal = listItems[randomIndex];
                 }
-
                 resultDisplay.innerText = randomVal;
 
-                // Dừng quay
+                // --- 4. KẾT THÚC VÀ CHỐT SỐ ---
                 if (elapsedTime >= duration) {
                     clearInterval(spinInterval);
                     
-                    // --- KẾT QUẢ CHỐT HẠ ---
-                    if (targetResult !== null) {
-                        // Nếu có cài cheat -> Hiện thị kết quả cheat
-                        resultDisplay.innerText = targetResult;
-                    } else {
-                        // Nếu không cheat -> Random thật
+                    let finalResult;
+
+                    // A. Ưu tiên lấy từ Cheat List (Theo thứ tự)
+                    if (cheatList.length > 0 && cheatIndex < cheatList.length) {
+                        finalResult = cheatList[cheatIndex];
+                        cheatIndex++; // Tăng chỉ số để lần sau lấy số tiếp theo
+                    } 
+                    // B. Nếu không cheat hoặc đã hết số cheat -> Random thật
+                    else {
                         if (mode === 'range') {
                             let final = Math.floor(Math.random() * (max - min + 1)) + min;
-                            resultDisplay.innerText = formatNumber(final, paddingLength);
+                            finalResult = formatNumber(final, paddingLength);
                         } else {
                             let finalIndex = Math.floor(Math.random() * listItems.length);
-                            resultDisplay.innerText = listItems[finalIndex];
+                            finalResult = listItems[finalIndex];
                         }
                     }
+
+                    resultDisplay.innerText = finalResult;
                     
                     btn.disabled = false;
                     btn.innerText = "Quay Số";
